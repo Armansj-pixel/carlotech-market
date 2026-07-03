@@ -32,38 +32,13 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 export default async function AdminOrdersPage() {
   const supabase = createServiceClient();
 
-  // Query A: paling sederhana, tanpa order/limit
-  const { data: dataA, error: errorA } = await supabase
-    .from("orders")
-    .select("id");
-
-  // Query B: select semua kolom, tanpa order/limit
-  const { data: dataB, error: errorB } = await supabase
-    .from("orders")
-    .select("*");
-
-  // Query C: query asli (select * + order + limit)
+  // Catatan: sengaja tanpa .limit() — kombinasi .order() + .limit() di client
+  // Supabase yang dipakai project ini menghasilkan array kosong (bug yang sudah
+  // diverifikasi lewat debug manual). .order() sendirian berjalan normal.
   const { data: orders, error } = await supabase
     .from("orders")
     .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  // Query D: select * + order saja (tanpa limit)
-  const { data: dataD, error: errorD } = await supabase
-    .from("orders")
-    .select("*")
     .order("created_at", { ascending: false });
-
-  // Query E: select * + limit saja (tanpa order)
-  const { data: dataE, error: errorE } = await supabase
-    .from("orders")
-    .select("*")
-    .limit(100);
-
-  const { count: rawCount, error: countError } = await supabase
-    .from("orders")
-    .select("*", { count: "exact", head: true });
 
   const list = (orders ?? []) as Order[];
 
@@ -85,37 +60,11 @@ export default async function AdminOrdersPage() {
           </Link>
         </div>
 
-        <div className="mt-4 rounded-lg border border-signal-amber/40 bg-signal-amber/5 p-3 font-mono text-[11px] text-signal-amber">
-          [DEBUG]
-          <br />
-          Query A (select id saja): length = {dataA?.length ?? "null"}, error ={" "}
-          {errorA ? errorA.message : "tidak ada"}
-          <br />
-          Query B (select * tanpa order/limit): length = {dataB?.length ?? "null"}, error ={" "}
-          {errorB ? errorB.message : "tidak ada"}
-          <br />
-          Query C (select * + order + limit): length = {list.length}, error ={" "}
-          {error ? error.message : "tidak ada"}
-          <br />
-          Query D (select * + order saja): length = {dataD?.length ?? "null"}, error ={" "}
-          {errorD ? errorD.message : "tidak ada"}
-          <br />
-          Query E (select * + limit saja): length = {dataE?.length ?? "null"}, error ={" "}
-          {errorE ? errorE.message : "tidak ada"}
-          <br />
-          Raw count (head only): {String(rawCount)}, error ={" "}
-          {countError ? countError.message : "tidak ada"}
-        </div>
-
         <div className="mt-8 space-y-3">
           {error && (
             <div className="glass-card border-signal-red/40 p-5">
               <p className="font-mono text-xs text-signal-red">
                 Gagal ambil data order: {error.message}
-              </p>
-              <p className="mt-1 font-mono text-[10px] text-text-muted">
-                Cek SUPABASE_SERVICE_ROLE_KEY & NEXT_PUBLIC_SUPABASE_URL di environment variables,
-                lalu redeploy.
               </p>
             </div>
           )}
