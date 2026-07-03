@@ -3,44 +3,37 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Kecilkan & kompres gambar di browser, lalu ubah jadi base64 (data URL) —
-// disimpan langsung sebagai teks di kolom proof_url, TANPA butuh Supabase
-// Storage bucket sama sekali. Base64 data URL tetap bisa dipakai langsung
-// sebagai src="..." buat nampilin gambar di admin panel.
-async function compressToBase64(
-  file: File,
-  maxWidth = 1000,
-  quality = 0.6
-): Promise<string> {
+// Kompres foto jadi base64 langsung di HP, sekali proses aja (gak diulang-ulang)
+// biar gak berat. Target: ukuran kecil dari awal, cukup buat baca bukti transfer.
+function compressToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
     const img = new Image();
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error("Gagal membaca file"));
 
     img.onload = () => {
-      const scale = Math.min(1, maxWidth / img.width);
+      const MAX_WIDTH = 700;
+      const scale = Math.min(1, MAX_WIDTH / img.width);
       const canvas = document.createElement("canvas");
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
         reject(new Error("Canvas tidak didukung"));
         return;
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // toDataURL langsung menghasilkan string base64 siap simpan
-      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.45);
+      URL.revokeObjectURL(objectUrl);
       resolve(dataUrl);
     };
-    img.onerror = () => reject(new Error("Gagal memuat gambar"));
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Gagal memuat gambar"));
+    };
 
-    reader.readAsDataURL(file);
+    img.src = objectUrl;
   });
 }
 
@@ -57,21 +50,14 @@ export default function UploadProof({ orderId }: { orderId: string }) {
     setError("");
 
     try {
-      setProgressLabel("Mengecilkan & mengonversi foto…");
+      setProgressLabel("Mengecilkan foto…");
       const base64 = await compressToBase64(file);
-
-      // Batas aman kolom text di Postgres jauh di atas ini, tapi tetap kita
-      // jaga-jaga: kalau hasil base64 masih terlalu besar, kompres lebih lagi
-      let finalDataUrl = base64;
-      if (base64.length > 700_000) {
-        finalDataUrl = await compressToBase64(file, 700, 0.4);
-      }
 
       setProgressLabel("Menyimpan…");
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proofUrl: finalDataUrl }),
+        body: JSON.stringify({ proofUrl: base64 }),
       });
 
       if (!res.ok) {
