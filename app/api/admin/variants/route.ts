@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAdminAuthed } from "@/lib/admin/auth";
 
@@ -28,5 +29,8 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Gagal menambah varian." }, { status: 500 });
   }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produk");
   return NextResponse.json({ variant: data });
 }
