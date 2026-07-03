@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { Order, OrderStatus } from "@/lib/supabase/types";
 import UploadProof from "./UploadProof";
 
+export const dynamic = "force-dynamic";
+
 function formatIDR(n: number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
