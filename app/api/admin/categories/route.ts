@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAdminAuthed } from "@/lib/admin/auth";
 
@@ -25,7 +26,13 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: "Gagal menambah kategori." }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message.includes("duplicate") ? "Kategori dengan nama itu sudah ada." : "Gagal menambah kategori." },
+      { status: 500 }
+    );
   }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produk");
   return NextResponse.json({ category: data });
 }
