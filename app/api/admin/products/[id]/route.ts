@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAdminAuthed } from "@/lib/admin/auth";
 
@@ -35,6 +36,9 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: "Gagal update produk." }, { status: 500 });
   }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produk");
   return NextResponse.json({ product: data });
 }
 
@@ -51,5 +55,8 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: "Gagal hapus produk." }, { status: 500 });
   }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produk");
   return NextResponse.json({ ok: true });
 }
