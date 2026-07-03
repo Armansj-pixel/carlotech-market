@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export async function GET(
@@ -18,7 +19,7 @@ export async function GET(
   return NextResponse.json({ order });
 }
 
-// Dipakai buyer untuk melampirkan URL bukti transfer setelah upload ke storage
+// Dipakai buyer untuk melampirkan bukti transfer (base64) setelah checkout
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -31,15 +32,19 @@ export async function PATCH(
   }
 
   const supabase = createServiceClient();
-  const { data: order, error } = await supabase
+  // Sengaja TIDAK pakai .select().single() di sini — biar respons ke buyer
+  // gak perlu ngirim balik data gede (foto base64) yang baru aja diupload,
+  // cukup konfirmasi berhasil/gagal aja, jadi jauh lebih cepat.
+  const { error } = await supabase
     .from("orders")
     .update({ proof_url: proofUrl })
-    .eq("id", params.id)
-    .select()
-    .single();
+    .eq("id", params.id);
 
-  if (error || !order) {
+  if (error) {
     return NextResponse.json({ error: "Gagal menyimpan bukti." }, { status: 500 });
   }
-  return NextResponse.json({ order });
+
+  revalidatePath("/admin/pesanan");
+  revalidatePath(`/order/${params.id}`);
+  return NextResponse.json({ ok: true });
 }
