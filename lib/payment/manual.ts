@@ -2,7 +2,7 @@
 // Ganti dengan data rekening/QRIS milik Carlo Tech.
 export const MANUAL_PAYMENT_INFO = {
   bankName: "BCA",
-  accountNumber: "1234567890",
+  accountNumber: "4062274852",
   accountHolder: "Arman Dion Sakti",
   qrisImageUrl: "", // isi URL gambar QRIS statis kalau ada
   instructions:
