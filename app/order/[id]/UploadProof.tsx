@@ -4,10 +4,61 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// Kecilkan & kompres gambar di browser sebelum upload, biar gak nunggu lama
+// upload foto asli dari kamera HP (biasanya 3-8MB jadi di bawah 300-500KB).
+async function compressImage(file: File, maxWidth = 1280, quality = 0.7): Promise<File> {
+  // PDF atau file non-gambar dilewatkan apa adanya
+  if (!file.type.startsWith("image/")) return file;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("Gagal membaca file"));
+
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          resolve(
+            new File([blob], file.name.replace(/\.(png|jpe?g|webp)$/i, ".jpg"), {
+              type: "image/jpeg",
+            })
+          );
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => reject(new Error("Gagal memuat gambar"));
+
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function UploadProof({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progressLabel, setProgressLabel] = useState("");
   const [error, setError] = useState("");
 
   async function handleUpload() {
@@ -16,16 +67,21 @@ export default function UploadProof({ orderId }: { orderId: string }) {
     setError("");
 
     try {
-      const supabase = createClient();
-      const path = `${orderId}/${Date.now()}-${file.name}`;
+      setProgressLabel("Mengecilkan ukuran foto…");
+      const compressed = await compressImage(file);
 
+      const supabase = createClient();
+      const path = `${orderId}/${Date.now()}-${compressed.name}`;
+
+      setProgressLabel("Mengunggah…");
       const { error: uploadError } = await supabase.storage
         .from("payment-proofs")
-        .upload(path, file);
+        .upload(path, compressed);
 
       if (uploadError) {
         setError("Gagal upload. Pastikan bucket 'payment-proofs' sudah dibuat di Supabase Storage.");
         setLoading(false);
+        setProgressLabel("");
         return;
       }
 
@@ -33,6 +89,7 @@ export default function UploadProof({ orderId }: { orderId: string }) {
         .from("payment-proofs")
         .getPublicUrl(path);
 
+      setProgressLabel("Menyimpan…");
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -42,6 +99,7 @@ export default function UploadProof({ orderId }: { orderId: string }) {
       if (!res.ok) {
         setError("Gagal menyimpan bukti transfer.");
         setLoading(false);
+        setProgressLabel("");
         return;
       }
 
@@ -49,6 +107,7 @@ export default function UploadProof({ orderId }: { orderId: string }) {
     } catch {
       setError("Terjadi kesalahan. Coba lagi.");
       setLoading(false);
+      setProgressLabel("");
     }
   }
 
@@ -69,7 +128,7 @@ export default function UploadProof({ orderId }: { orderId: string }) {
         disabled={!file || loading}
         className="mt-4 w-full rounded-xl bg-gradient-to-r from-signal-cyan to-signal-violet py-2.5 font-display font-bold text-ink disabled:opacity-50"
       >
-        {loading ? "Mengunggah…" : "Kirim bukti"}
+        {loading ? progressLabel || "Memproses…" : "Kirim bukti"}
       </button>
     </div>
   );
