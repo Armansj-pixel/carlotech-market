@@ -50,6 +50,13 @@ export default async function HomePage() {
             Langganan streaming, tools kreator, dan aplikasi premium lainnya.
             Order, bayar, akun terkirim langsung ke WhatsApp-mu.
           </p>
+          <a
+            href="/cek-pesanan"
+            className="animate-fadeUp glass-chip mt-5 inline-block rounded-xl px-4 py-2 font-mono text-xs text-text-muted opacity-0"
+            style={{ animationDelay: "0.32s" }}
+          >
+            Sudah pesan? Cek status pesanan →
+          </a>
         </div>
       </section>
 
