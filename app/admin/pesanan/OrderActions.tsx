@@ -16,12 +16,22 @@ export default function OrderActions({
 
   async function updateStatus(newStatus: OrderStatus) {
     setLoading(true);
-    await fetch(`/api/admin/orders/${orderId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    router.refresh();
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Gagal update status: ${data.error || res.status}`);
+        setLoading(false);
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      alert("Terjadi kesalahan jaringan saat update status.");
+    }
     setLoading(false);
   }
 
