@@ -37,6 +37,10 @@ export default async function AdminOrdersPage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
+  const { count: rawCount, error: countError } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true });
+
   const list = (orders ?? []) as Order[];
 
   return (
@@ -55,6 +59,12 @@ export default async function AdminOrdersPage() {
           >
             Kelola Produk →
           </Link>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-signal-amber/40 bg-signal-amber/5 p-3 font-mono text-[11px] text-signal-amber">
+          [DEBUG] versi cek: raw count = {String(rawCount)} · list.length setelah select * ={" "}
+          {list.length} · countError = {countError ? countError.message : "tidak ada"} ·
+          selectError = {error ? error.message : "tidak ada"}
         </div>
 
         <div className="mt-8 space-y-3">
