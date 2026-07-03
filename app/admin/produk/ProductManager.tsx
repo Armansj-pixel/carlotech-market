@@ -34,6 +34,7 @@ export default function ProductManager({
   // form tambah kategori
   const [catName, setCatName] = useState("");
   const [catLoading, setCatLoading] = useState(false);
+  const [catError, setCatError] = useState("");
 
   // form tambah produk
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -46,13 +47,20 @@ export default function ProductManager({
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
+    setCatError("");
     if (!catName.trim()) return;
     setCatLoading(true);
-    await fetch("/api/admin/categories", {
+    const res = await fetch("/api/admin/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: catName, slug: slugify(catName) }),
     });
+    const data = await res.json();
+    if (!res.ok) {
+      setCatError(data.error || "Gagal menambah kategori.");
+      setCatLoading(false);
+      return;
+    }
     setCatName("");
     setCatLoading(false);
     router.refresh();
@@ -135,6 +143,7 @@ export default function ProductManager({
             Tambah
           </button>
         </form>
+        {catError && <p className="mt-2 text-xs text-signal-red">{catError}</p>}
       </div>
 
       {/* Tambah produk */}
