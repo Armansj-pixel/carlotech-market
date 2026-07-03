@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAdminAuthed } from "@/lib/admin/auth";
 
@@ -31,5 +32,7 @@ export async function PATCH(
   if (error || !order) {
     return NextResponse.json({ error: "Gagal update order." }, { status: 500 });
   }
+
+  revalidatePath("/admin/pesanan");
   return NextResponse.json({ order });
 }
