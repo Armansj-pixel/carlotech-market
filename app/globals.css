@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0A0A18;
+  color: #F1F0FA;
+  position: relative;
+}
+
+/* Background blob mesh — dipasang sekali di root layout */
+.blob-field {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.5;
+}
+.blob-violet {
+  width: 520px;
+  height: 520px;
+  background: #7C3AED;
+  top: -120px;
+  left: -80px;
+}
+.blob-cyan {
+  width: 480px;
+  height: 480px;
+  background: #22D3EE;
+  top: 60px;
+  right: -140px;
+}
+.blob-pink {
+  width: 460px;
+  height: 460px;
+  background: #EC4899;
+  bottom: -160px;
+  left: 20%;
+}
+
+.app-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Kartu kaca reusable */
+.glass-card {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease,
+    box-shadow 0.3s ease, background-color 0.3s ease;
+}
+.glass-card-hover:hover {
+  transform: translateY(-6px);
+  border-color: rgba(34, 211, 238, 0.55);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(34, 211, 238, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.glass-chip {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s ease;
+}
+.glass-chip:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+}
+.glass-chip.active {
+  border-color: rgba(34, 211, 238, 0.6);
+  background: rgba(34, 211, 238, 0.16);
+  color: #7ee8f9;
+}
+
+.glass-input {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(34, 211, 238, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Badge logo produk — background putih supaya semua logo brand kebaca jelas */
+.logo-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.glass-card-hover:hover .logo-badge {
+  transform: scale(1.08) rotate(-3deg);
+}
+.logo-badge img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+.logo-badge-fallback {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #0a0a18;
+}
+
+.price-gradient {
+  background: linear-gradient(90deg, #7ee8f9, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dot-live {
+  animation: pulseSoft 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.7);
+}
+.dot-out {
+  box-shadow: 0 0 12px rgba(251, 113, 133, 0.7);
+}
+
+/* Stagger delay helper untuk grid kartu */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+.stagger-9 { animation-delay: 0.45s; }
+
+::selection {
+  background: #22d3ee;
+  color: #0a0a18;
+}
+
+:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
