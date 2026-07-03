@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { isAdminAuthed } from "@/lib/admin/auth";
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  if (!isAdminAuthed()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const body = await req.json();
+  const allowedFields = [
+    "name",
+    "slug",
+    "category_id",
+    "description",
+    "image_url",
+    "is_active",
+    "sort_order",
+  ];
+  const update: Record<string, unknown> = {};
+  for (const key of allowedFields) {
+    if (key in body) update[key] = body[key];
+  }
+
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("products")
+    .update(update)
+    .eq("id", params.id)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: "Gagal update produk." }, { status: 500 });
+  }
+  return NextResponse.json({ product: data });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  if (!isAdminAuthed()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("products").delete().eq("id", params.id);
+
+  if (error) {
+    return NextResponse.json({ error: "Gagal hapus produk." }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
