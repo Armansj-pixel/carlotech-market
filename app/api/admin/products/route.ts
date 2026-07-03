@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isAdminAuthed } from "@/lib/admin/auth";
 
@@ -40,5 +41,8 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produk");
   return NextResponse.json({ product: data });
 }
