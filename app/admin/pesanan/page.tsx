@@ -31,6 +31,18 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 
 export default async function AdminOrdersPage() {
   const supabase = createServiceClient();
+
+  // Query A: paling sederhana, tanpa order/limit
+  const { data: dataA, error: errorA } = await supabase
+    .from("orders")
+    .select("id");
+
+  // Query B: select semua kolom, tanpa order/limit
+  const { data: dataB, error: errorB } = await supabase
+    .from("orders")
+    .select("*");
+
+  // Query C: query asli (select * + order + limit)
   const { data: orders, error } = await supabase
     .from("orders")
     .select("*")
@@ -62,9 +74,19 @@ export default async function AdminOrdersPage() {
         </div>
 
         <div className="mt-4 rounded-lg border border-signal-amber/40 bg-signal-amber/5 p-3 font-mono text-[11px] text-signal-amber">
-          [DEBUG] versi cek: raw count = {String(rawCount)} · list.length setelah select * ={" "}
-          {list.length} · countError = {countError ? countError.message : "tidak ada"} ·
-          selectError = {error ? error.message : "tidak ada"}
+          [DEBUG]
+          <br />
+          Query A (select id saja): length = {dataA?.length ?? "null"}, error ={" "}
+          {errorA ? errorA.message : "tidak ada"}
+          <br />
+          Query B (select * tanpa order/limit): length = {dataB?.length ?? "null"}, error ={" "}
+          {errorB ? errorB.message : "tidak ada"}
+          <br />
+          Query C (select * + order + limit): length = {list.length}, error ={" "}
+          {error ? error.message : "tidak ada"}
+          <br />
+          Raw count (head only): {String(rawCount)}, error ={" "}
+          {countError ? countError.message : "tidak ada"}
         </div>
 
         <div className="mt-8 space-y-3">
