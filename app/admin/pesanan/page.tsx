@@ -89,12 +89,16 @@ export default async function AdminOrdersPage() {
                     {o.buyer_name} · {o.buyer_whatsapp}
                   </p>
                   {o.proof_url && (
-                    <a
-                      href={o.proof_url}
-                      target="_blank"
-                      className="mt-1 inline-block font-mono text-xs text-signal-green underline"
-                    >
-                      Lihat bukti transfer →
+                    <a href={o.proof_url} target="_blank" className="mt-2 block w-fit">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={o.proof_url}
+                        alt="Bukti transfer"
+                        className="max-h-32 rounded-lg border border-white/15 object-contain"
+                      />
+                      <p className="mt-1 font-mono text-[10px] text-signal-green underline">
+                        Buka ukuran penuh →
+                      </p>
                     </a>
                   )}
                 </div>
