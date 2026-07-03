@@ -49,6 +49,18 @@ export default async function AdminOrdersPage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
+  // Query D: select * + order saja (tanpa limit)
+  const { data: dataD, error: errorD } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  // Query E: select * + limit saja (tanpa order)
+  const { data: dataE, error: errorE } = await supabase
+    .from("orders")
+    .select("*")
+    .limit(100);
+
   const { count: rawCount, error: countError } = await supabase
     .from("orders")
     .select("*", { count: "exact", head: true });
@@ -84,6 +96,12 @@ export default async function AdminOrdersPage() {
           <br />
           Query C (select * + order + limit): length = {list.length}, error ={" "}
           {error ? error.message : "tidak ada"}
+          <br />
+          Query D (select * + order saja): length = {dataD?.length ?? "null"}, error ={" "}
+          {errorD ? errorD.message : "tidak ada"}
+          <br />
+          Query E (select * + limit saja): length = {dataE?.length ?? "null"}, error ={" "}
+          {errorE ? errorE.message : "tidak ada"}
           <br />
           Raw count (head only): {String(rawCount)}, error ={" "}
           {countError ? countError.message : "tidak ada"}
