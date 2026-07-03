@@ -31,7 +31,7 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 
 export default async function AdminOrdersPage() {
   const supabase = createServiceClient();
-  const { data: orders } = await supabase
+  const { data: orders, error } = await supabase
     .from("orders")
     .select("*")
     .order("created_at", { ascending: false })
@@ -58,7 +58,18 @@ export default async function AdminOrdersPage() {
         </div>
 
         <div className="mt-8 space-y-3">
-          {list.length === 0 && (
+          {error && (
+            <div className="glass-card border-signal-red/40 p-5">
+              <p className="font-mono text-xs text-signal-red">
+                Gagal ambil data order: {error.message}
+              </p>
+              <p className="mt-1 font-mono text-[10px] text-text-muted">
+                Cek SUPABASE_SERVICE_ROLE_KEY & NEXT_PUBLIC_SUPABASE_URL di environment variables,
+                lalu redeploy.
+              </p>
+            </div>
+          )}
+          {!error && list.length === 0 && (
             <p className="text-text-muted">Belum ada pesanan masuk.</p>
           )}
 
