@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
-// Kecilkan & kompres gambar di browser sebelum upload, biar gak nunggu lama
-// upload foto asli dari kamera HP (biasanya 3-8MB jadi di bawah 300-500KB).
-async function compressImage(file: File, maxWidth = 1280, quality = 0.7): Promise<File> {
-  // PDF atau file non-gambar dilewatkan apa adanya
-  if (!file.type.startsWith("image/")) return file;
-
+// Kecilkan & kompres gambar di browser, lalu ubah jadi base64 (data URL) —
+// disimpan langsung sebagai teks di kolom proof_url, TANPA butuh Supabase
+// Storage bucket sama sekali. Base64 data URL tetap bisa dipakai langsung
+// sebagai src="..." buat nampilin gambar di admin panel.
+async function compressToBase64(
+  file: File,
+  maxWidth = 1000,
+  quality = 0.6
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
@@ -27,26 +29,14 @@ async function compressImage(file: File, maxWidth = 1280, quality = 0.7): Promis
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve(file);
+        reject(new Error("Canvas tidak didukung"));
         return;
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve(file);
-            return;
-          }
-          resolve(
-            new File([blob], file.name.replace(/\.(png|jpe?g|webp)$/i, ".jpg"), {
-              type: "image/jpeg",
-            })
-          );
-        },
-        "image/jpeg",
-        quality
-      );
+      // toDataURL langsung menghasilkan string base64 siap simpan
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve(dataUrl);
     };
     img.onerror = () => reject(new Error("Gagal memuat gambar"));
 
@@ -67,33 +57,21 @@ export default function UploadProof({ orderId }: { orderId: string }) {
     setError("");
 
     try {
-      setProgressLabel("Mengecilkan ukuran foto…");
-      const compressed = await compressImage(file);
+      setProgressLabel("Mengecilkan & mengonversi foto…");
+      const base64 = await compressToBase64(file);
 
-      const supabase = createClient();
-      const path = `${orderId}/${Date.now()}-${compressed.name}`;
-
-      setProgressLabel("Mengunggah…");
-      const { error: uploadError } = await supabase.storage
-        .from("payment-proofs")
-        .upload(path, compressed);
-
-      if (uploadError) {
-        setError("Gagal upload. Pastikan bucket 'payment-proofs' sudah dibuat di Supabase Storage.");
-        setLoading(false);
-        setProgressLabel("");
-        return;
+      // Batas aman kolom text di Postgres jauh di atas ini, tapi tetap kita
+      // jaga-jaga: kalau hasil base64 masih terlalu besar, kompres lebih lagi
+      let finalDataUrl = base64;
+      if (base64.length > 700_000) {
+        finalDataUrl = await compressToBase64(file, 700, 0.4);
       }
-
-      const { data: publicUrl } = supabase.storage
-        .from("payment-proofs")
-        .getPublicUrl(path);
 
       setProgressLabel("Menyimpan…");
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proofUrl: publicUrl.publicUrl }),
+        body: JSON.stringify({ proofUrl: finalDataUrl }),
       });
 
       if (!res.ok) {
@@ -118,7 +96,7 @@ export default function UploadProof({ orderId }: { orderId: string }) {
       </p>
       <input
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*"
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="mt-3 w-full font-mono text-xs text-text-muted"
       />
