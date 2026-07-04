@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Category, Product } from "@/lib/supabase/types";
 import ProductLogo from "@/components/ProductLogo";
+import { getGsap } from "@/lib/motion/gsap";
 
 function formatIDR(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -21,11 +22,72 @@ export default function CatalogClient({
   products: Product[];
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const cardRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
 
   const filtered = useMemo(() => {
     if (!activeCategory) return products;
     return products.filter((p) => p.category_id === activeCategory);
   }, [activeCategory, products]);
+
+  // GSAP scroll-reveal — kartu muncul pas masuk viewport pas di-scroll,
+  // bukan cuma pas halaman pertama kali dibuka.
+  useEffect(() => {
+    const { gsap, ScrollTrigger } = getGsap();
+    const cards = Array.from(cardRefs.current.values());
+    if (cards.length === 0) return;
+
+    gsap.set(cards, { opacity: 0, y: 24 });
+
+    const triggers = cards.map((card) =>
+      ScrollTrigger.create({
+        trigger: card,
+        start: "top 92%",
+        once: true,
+        onEnter: () => {
+          gsap.to(card, {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            ease: "power2.out",
+          });
+        },
+      })
+    );
+
+    return () => {
+      triggers.forEach((t) => t.kill());
+    };
+  }, [filtered]);
+
+  // Micro-interaction: tilt kartu ngikutin posisi kursor
+  function handleMouseMove(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
+    const card = cardRefs.current.get(id);
+    if (!card) return;
+    const { gsap } = getGsap();
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+
+    gsap.to(card, {
+      rotateX: (-y / rect.height) * 8,
+      rotateY: (x / rect.width) * 8,
+      transformPerspective: 600,
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  }
+
+  function handleMouseLeave(id: string) {
+    const card = cardRefs.current.get(id);
+    if (!card) return;
+    const { gsap } = getGsap();
+    gsap.to(card, {
+      rotateX: 0,
+      rotateY: 0,
+      duration: 0.5,
+      ease: "power3.out",
+    });
+  }
 
   return (
     <>
@@ -63,19 +125,24 @@ export default function CatalogClient({
             </p>
           )}
 
-          {filtered.map((p, i) => {
+          {filtered.map((p) => {
             const variants = p.product_variants ?? [];
             const cheapest = variants
               .filter((v) => v.is_active)
               .sort((a, b) => a.price - b.price)[0];
             const anyStock = variants.some((v) => v.stock_count > 0);
-            const staggerClass = `stagger-${Math.min(i + 1, 9)}`;
 
             return (
               <Link
                 key={p.id}
                 href={`/produk/${p.slug}`}
-                className={`glass-card glass-card-hover animate-cardIn ${staggerClass} group relative overflow-hidden p-5 opacity-0`}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(p.id, el);
+                }}
+                onMouseMove={(e) => handleMouseMove(e, p.id)}
+                onMouseLeave={() => handleMouseLeave(p.id)}
+                className="glass-card group relative overflow-hidden p-5 will-change-transform"
+                style={{ transformStyle: "preserve-3d" }}
               >
                 <div className="flex items-center gap-3.5">
                   <ProductLogo name={p.name} imageUrl={p.image_url} />
