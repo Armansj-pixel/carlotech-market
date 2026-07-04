@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateOrderCode } from "@/lib/payment/manual";
+import { sendTelegramMessage, formatNewOrderMessage } from "@/lib/notification/telegram";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,6 +56,19 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Notifikasi ke Telegram — kalau gagal/belum dikonfigurasi, gak masalah,
+    // order tetap berhasil dibuat.
+    sendTelegramMessage(
+      formatNewOrderMessage({
+        orderCode,
+        productName: (variant as any).products?.name ?? "Produk",
+        variantLabel: variant.label,
+        price: variant.price,
+        buyerName,
+        buyerWhatsapp,
+      })
+    );
 
     return NextResponse.json({ order });
   } catch (err) {
