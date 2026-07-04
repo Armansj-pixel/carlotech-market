@@ -48,7 +48,7 @@ export async function PATCH(
   // Ambil kolom kecil aja (bukan proof_url yang gede) buat isi notifikasi
   const { data: orderInfo } = await supabase
     .from("orders")
-    .select("order_code, buyer_name, buyer_whatsapp")
+    .select("order_code, buyer_name")
     .eq("id", params.id)
     .single();
 
@@ -57,7 +57,6 @@ export async function PATCH(
       formatProofUploadedMessage({
         orderCode: orderInfo.order_code,
         buyerName: orderInfo.buyer_name,
-        buyerWhatsapp: orderInfo.buyer_whatsapp,
       })
     );
   }
