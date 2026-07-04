@@ -53,7 +53,7 @@ export async function PATCH(
     .single();
 
   if (orderInfo) {
-    sendTelegramMessage(
+    await sendTelegramMessage(
       formatProofUploadedMessage({
         orderCode: orderInfo.order_code,
         buyerName: orderInfo.buyer_name,
