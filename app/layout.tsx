@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
+import ThreeBackground from "@/components/ThreeBackground";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -36,12 +38,8 @@ export default function RootLayout({
       <body
         className={`${display.variable} ${body.variable} ${mono.variable} font-body bg-ink text-text`}
       >
-        <div className="blob-field" aria-hidden="true">
-          <div className="blob blob-violet animate-float1" />
-          <div className="blob blob-cyan animate-float2" />
-          <div className="blob blob-pink animate-float3" />
-        </div>
-        {children}
+        <ThreeBackground />
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   );
