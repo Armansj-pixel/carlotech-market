@@ -6,6 +6,19 @@ export function isTelegramConfigured() {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
 }
 
+// Ubah nomor format apapun (08xx, 62xx, +62xx, dengan spasi/strip) jadi
+// format internasional tanpa "+" yang dipakai wa.me link (628xx...)
+function normalizeToWaLink(rawNumber: string) {
+  const digits = rawNumber.replace(/\D/g, "");
+  let normalized = digits;
+  if (digits.startsWith("0")) {
+    normalized = "62" + digits.slice(1);
+  } else if (!digits.startsWith("62")) {
+    normalized = "62" + digits;
+  }
+  return `https://wa.me/${normalized}`;
+}
+
 export async function sendTelegramMessage(text: string) {
   if (!isTelegramConfigured()) {
     console.warn("Telegram belum dikonfigurasi, notifikasi dilewati.");
@@ -51,12 +64,15 @@ export function formatNewOrderMessage(params: {
     maximumFractionDigits: 0,
   }).format(params.price);
 
+  const waLink = normalizeToWaLink(params.buyerWhatsapp);
+
   return (
     `🛒 <b>Order baru masuk!</b>\n\n` +
     `Kode: <code>${params.orderCode}</code>\n` +
     `Produk: ${params.productName} — ${params.variantLabel}\n` +
     `Harga: ${price}\n` +
-    `Pembeli: ${params.buyerName} (${params.buyerWhatsapp})\n\n` +
+    `Pembeli: ${params.buyerName}\n` +
+    `WhatsApp: <a href="${waLink}">${params.buyerWhatsapp}</a>\n\n` +
     `Cek di /admin/pesanan`
   );
 }
@@ -64,11 +80,15 @@ export function formatNewOrderMessage(params: {
 export function formatProofUploadedMessage(params: {
   orderCode: string;
   buyerName: string;
+  buyerWhatsapp: string;
 }) {
+  const waLink = normalizeToWaLink(params.buyerWhatsapp);
+
   return (
     `📎 <b>Bukti transfer diupload</b>\n\n` +
     `Kode: <code>${params.orderCode}</code>\n` +
-    `Pembeli: ${params.buyerName}\n\n` +
+    `Pembeli: ${params.buyerName}\n` +
+    `WhatsApp: <a href="${waLink}">${params.buyerWhatsapp}</a>\n\n` +
     `Cek & konfirmasi di /admin/pesanan`
   );
 }
