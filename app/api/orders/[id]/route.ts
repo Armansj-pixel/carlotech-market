@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendTelegramMessage, formatProofUploadedMessage } from "@/lib/notification/telegram";
 
 export async function GET(
   _req: NextRequest,
@@ -42,6 +43,22 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: "Gagal menyimpan bukti." }, { status: 500 });
+  }
+
+  // Ambil kolom kecil aja (bukan proof_url yang gede) buat isi notifikasi
+  const { data: orderInfo } = await supabase
+    .from("orders")
+    .select("order_code, buyer_name")
+    .eq("id", params.id)
+    .single();
+
+  if (orderInfo) {
+    sendTelegramMessage(
+      formatProofUploadedMessage({
+        orderCode: orderInfo.order_code,
+        buyerName: orderInfo.buyer_name,
+      })
+    );
   }
 
   revalidatePath("/admin/pesanan");
