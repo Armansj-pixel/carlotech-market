@@ -57,9 +57,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Notifikasi ke Telegram — kalau gagal/belum dikonfigurasi, gak masalah,
-    // order tetap berhasil dibuat.
-    sendTelegramMessage(
+    // Notifikasi ke Telegram — di-await biar gak keburu dimatiin sama
+    // Vercel sebelum request-nya selesai (kalau gak diawait, proses bisa
+    // "kepotong" begitu response dikirim balik ke pembeli).
+    await sendTelegramMessage(
       formatNewOrderMessage({
         orderCode,
         productName: (variant as any).products?.name ?? "Produk",
