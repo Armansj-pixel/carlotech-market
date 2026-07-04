@@ -16,7 +16,7 @@ export async function sendTelegramMessage(text: string) {
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -25,6 +25,11 @@ export async function sendTelegramMessage(text: string) {
         parse_mode: "HTML",
       }),
     });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`Telegram API error (${res.status}):`, body);
+    }
   } catch (err) {
     // Sengaja gak dilempar sebagai error — kalau notifikasi gagal,
     // proses order tetap harus lanjut, jangan sampai gagal gara-gara ini.
