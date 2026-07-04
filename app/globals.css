@@ -8,6 +8,11 @@ html {
 
 body {
   background-color: #0A0A18;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(124,58,237,0.18), transparent),
+    radial-gradient(ellipse 55% 45% at 85% 20%, rgba(34,211,238,0.14), transparent),
+    radial-gradient(ellipse 50% 45% at 40% 90%, rgba(236,72,153,0.12), transparent);
+  background-attachment: fixed;
   color: #F1F0FA;
   position: relative;
 }
